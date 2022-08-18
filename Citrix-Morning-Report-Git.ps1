@@ -27,6 +27,7 @@
 
 cls
 asnp citrix*
+Get-XDAuthentication  -ProfileName CloudAdmin -Verbose
 
 $script:bad=0
 
