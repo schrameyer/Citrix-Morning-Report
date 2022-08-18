@@ -1,0 +1,53 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20220817201105
+Username: ZMR\DA_ZIMCHSC
+RunAs User: ZMR\DA_ZIMCHSC
+Configuration Name: 
+Machine: SBCTXADMINS (Microsoft Windows NT 10.0.20348.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -Command Import-Module 'c:\Users\DA_ZIMCHSC\.vscode\extensions\ms-vscode.powershell-2022.7.2\modules\PowerShellEditorServices\PowerShellEditorServices.psd1'; Start-EditorServices -HostName 'Visual Studio Code Host' -HostProfileId 'Microsoft.VSCode' -HostVersion '2022.7.2' -AdditionalModules @('PowerShellEditorServices.VSCode') -BundledModulesPath 'c:\Users\DA_ZIMCHSC\.vscode\extensions\ms-vscode.powershell-2022.7.2\modules' -EnableConsoleRepl -StartupBanner "PowerShell Extension v2022.7.2
+Copyright (c) Microsoft Corporation.
+
+https://aka.ms/vscode-powershell
+Type 'help' to get help.
+" -LogLevel 'Normal' -LogPath 'c:\Users\DA_ZIMCHSC\AppData\Roaming\Code\User\globalStorage\ms-vscode.powershell\logs\1660781241-a62cb18a-ab83-4bc2-bc27-cb9ab2c06bc21660780321619\EditorServices.log' -SessionDetailsPath 'c:\Users\DA_ZIMCHSC\AppData\Roaming\Code\User\globalStorage\ms-vscode.powershell\sessions\PSES-VSCode-6152-992777.json' -FeatureFlags @() 
+Process ID: 2600
+PSVersion: 5.1.20348.1
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.20348.1
+BuildVersion: 10.0.20348.1
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is -Maintmode\8-17-2022-20-11.txt
+-
+****************************************************
+Unregistered Machines in  sbctxcloud-p01 :
+PS>TerminatingError(Get-XDAuthentication): "AuthenticationFailed"
+Get-XDAuthentication : AuthenticationFailed
+At line:1 char:1
++ Get-XDAuthentication
++ ~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Get-XDAuthentication:String) [Get-XDAuthentication], RemoteException
+    + FullyQualifiedErrorId : Citrix.Sdk.Proxy.ExceptionThrown,Citrix.Sdk.Proxy.GetXDAuthenticationCommand
+>> TerminatingError(Get-BrokerMachine): "Get-XDAuthentication failed: XDSDKProxy not set"
+Get-BrokerMachine : Get-XDAuthentication failed: XDSDKProxy not set
+At E:\.GITHUB\Citrix-Morning-Report\Citrix-Morning-Report-Git.ps1:56 char:31
++ ...   $unregs = Get-BrokerMachine -AdminAddress $DeliveryController -MaxR ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : AuthenticationError: (:) [Get-BrokerMachine], SdkOperationException
+    + FullyQualifiedErrorId : Citrix.XDPowerShell.Broker.AccessDenied,Citrix.Broker.Admin.SDK.GetBrokerMachineCommand
+Get-BrokerMachine : Get-XDAuthentication failed: XDSDKProxy not set
+At E:\.GITHUB\Citrix-Morning-Report\Citrix-Morning-Report-Git.ps1:56 char:31
++ ...   $unregs = Get-BrokerMachine -AdminAddress $DeliveryController -MaxR ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : AuthenticationError: (:) [Get-BrokerMachine], SdkOperationException
+    + FullyQualifiedErrorId : Citrix.XDPowerShell.Broker.AccessDenied,Citrix.Broker.Admin.SDK.GetBrokerMachineCommand
+
+
+****************************************************
+- 2022-08-17T20:11:12
+****************************************************
+Powered Off Machines in  sbctxcloud-p01 :

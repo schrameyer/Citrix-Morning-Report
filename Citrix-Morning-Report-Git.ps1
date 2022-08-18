@@ -27,6 +27,9 @@
 
 cls
 asnp citrix*
+Get-XDAuthentication -ProfileName CloudAd
+Citrix.Wem.Agent.LogonService.exe
+min
 
 $script:bad=0
 
@@ -491,71 +494,8 @@ Function Check-GPO
 ############ End Check GPO Application ############
 
 ############ Check App-V Logs ############
-Function Check-AppVLogs
-    {
-        $ErrorActionPreference = 'SilentlyContinue'
-        Write-Host "****************************************************`n"
-        Write-Host "Checking for App-V Scheduler log errors`n" -ForegroundColor Green
-        Foreach ($DeliveryController in $DeliveryControllers)
-            {
-                $servers = Get-BrokerMachine -AdminAddress $DeliveryController -SessionSupport MultiSession
-                #Skipping specific Delivery Controller
-                if ($DeliveryController -match "DeliveryControllerName") {
-                    Write-Verbose "Skipping App-V check in DeliveryControllerName"
-                    Continue
-                }
-                
-                foreach ($s in $servers) {
-                    $serverName = $s.HostedMachineName
-                    #Write-Host "Checking $serverName"
-                    try {
-                        $reachable = Test-Connection -ComputerName $serverName -Count 1 -Quiet
-                        if ($reachable) {
-                            # App-V 2.5 uses this name for the service
-                            $service25 = Get-Service -ComputerName $serverName -Name "AppV5SchedulerService"
-                            # App-V 2.6 uses this name for the service
-                            $service26 = Get-Service -ComputerName $serverName -Name "AppVSchedulerService"
-                            if (($service25 -eq $null) -and ($service26 -eq $null)) {
-                                Throw
-                            }
-                        }
-                        else {
-                            Write-Host "$serverName not reachable. Continuing."
-                            Continue
-                        }
-                    }
-                    catch {
-                        Write-Host "App-V Scheduler service not found on host $serverName"
-                        Continue 
-                    }
-                    try {
-                        if ($service25) {
-                            # App-V 2.5 logs to this location
-                            $errorCount = (Get-WinEvent -ComputerName $serverName -FilterHashtable @{LogName='App-V 5 Scheduler';ProviderName='App-V 5 Scheduler Service';Id=0} | Where-Object {$_.Message -match "CoCreateInstance"}).Count
-                            if ($errorCount -gt 0) {
-                                Write-Host "App-V Errors logged on $serverName. Restarting service."
-                                if (!$LogOnly) {Invoke-Command -ComputerName $serverName -ScriptBlock {Restart-Service -Name AppV5SchedulerService}}
-                            }
-                        }
-                        elseif ($service26) {
-                            # App-V 2.6 logs to this location
-                            $errorCount = (Get-WinEvent -ComputerName $serverName -FilterHashtable @{LogName='App-V 5 Scheduler Agent';ProviderName='App-V 5 Scheduler Service';Id=0} | Where-Object {$_.Message -match "CoCreateInstance"}).Count
-                            if ($errorCount -gt 0) {
-                                Write-Host "App-V Errors logged on $servername. Restarting service."
-                                if (!$LogOnly) {Invoke-Command -ComputerName $serverName -ScriptBlock {Restart-Service -Name AppVSchedulerService}}
-                            }
-                        }
-                    }
-                    catch {
-                        Continue
-                    }  
-                }  
-            }
-        Write-Host ""
-        Write-Host "****************************************************`n"
-        $ErrorActionPreference = 'Continue'
-    }
-############ END Check App-V Logs ############
+#Function Check-AppVLogs
+  ########## END Check App-V Logs ############
 
 ############ Email SMTP ###########
 Function Email
