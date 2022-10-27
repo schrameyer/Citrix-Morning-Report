@@ -9,7 +9,7 @@
  03/26/2019 -Added GPO Checks
  04/08/2019 -Updated App-V Checks
  06/19/2019 -updated GPO-Check function to include 'registered' for the get-brokermachine
- 08/18/2022 - Added et-XDAuthentication  -ProfileName "CloudAdmin"
+ 08/18/2022 - Added Get-XDAuthentication  -ProfileName "CloudAdmin"
  08/18/2022 - changed uptime greater than value from 24 hours to 30 days (720 Hours)
  08/18/2022 - Changed Get-BrokerDesktop to Get-BrokerMachine (supports -SessionSupport)
  08/18/2022 - set so uptime only looks at MultiSession delivery groups (exclude VDI's) -SessionSupport MultiSession
