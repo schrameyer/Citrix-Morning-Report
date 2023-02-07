@@ -9,11 +9,6 @@
  03/26/2019 -Added GPO Checks
  04/08/2019 -Updated App-V Checks
  06/19/2019 -updated GPO-Check function to include 'registered' for the get-brokermachine
- 08/18/2022 - Added Get-XDAuthentication  -ProfileName "CloudAdmin"
- 08/18/2022 - changed uptime greater than value from 24 hours to 30 days (720 Hours)
- 08/18/2022 - Changed Get-BrokerDesktop to Get-BrokerMachine (supports -SessionSupport)
- 08/18/2022 - set so uptime only looks at MultiSession delivery groups (exclude VDI's) -SessionSupport MultiSession
-
  #>
 
  Param(
@@ -42,7 +37,7 @@ $filename = $firstcomp.month.ToString() + "-" + $firstcomp.day.ToString() + "-" 
 $outputloc = $LogDir + "\" + $filename
 
 $hostname = hostname
-#$DeliveryControllers = sbctxcloud-p01
+# $DeliveryContoller = sbctxcloud-p01
 Start-Transcript -Path $outputloc
 
 Write-Host "-"
@@ -55,8 +50,8 @@ Function ListUnregs
        
             Foreach ($DeliveryController in $DeliveryControllers)
                 {
-                    write-host "Unregistered Servers in " $DeliveryController ":" -ForegroundColor Green
-                    $unregs = Get-BrokerMachine -SessionSupport MultiSession -AdminAddress $DeliveryController -MaxRecordCount 5000 -PowerState On -PowerActionPending $false -RegistrationState Unregistered | Sort-Object DNSName
+                    write-host "Unregistered Machines in " $DeliveryController ":" -ForegroundColor Green
+                    $unregs = Get-BrokerMachine -AdminAddress $DeliveryController -MaxRecordCount 5000 -PowerState On -PowerActionPending $false -RegistrationState Unregistered | Sort-Object DNSName
                         foreach ($unreg in $unregs)
                             {
                                 #write-host $unreg.dnsname
@@ -96,21 +91,21 @@ Function ListOff
                 {
                     write-host "Powered Off Machines in " $DeliveryController ":" -ForegroundColor Green
                     $poffs = Get-BrokerMachine -AdminAddress $DeliveryController -MaxRecordCount 5000 -PowerState Off -PowerActionPending $false -RegistrationState Unregistered | Sort-Object DNSName | Where-Object {($_.Tags -join(',')) -notlike "*$MaintTag*" -and $_.hostedmachinename -notlike 'ctxTEST*' -and $_.HostedMachineName -notlike 'CTXTST-*'}
- #                       foreach ($poff in $poffs)
- #                           {
-  #                              
-   #                             Try
-    #                                {
-   #                                     
-   #                                     if (!($LogOnly)){New-BrokerHostingPowerAction -Action TurnOn -MachineName $poff.HostedMachineName -AdminAddress $DeliveryController | Out-Null }
-   #                                     Write-host $poff.DNSName.Split(".",2)[0] " (Powering On)"
-   #                         
-   #                                 }
-   #                             Catch
-   #                                 {
-   #####                                     Write-host $poff.DNSName.Split(".",2)[0] " (Unable to Turn On)"
-  #                                  }
-   #                         }
+                        foreach ($poff in $poffs)
+                            {
+                                
+                                Try
+                                    {
+                                        
+                                        if (!($LogOnly)){New-BrokerHostingPowerAction -Action TurnOn -MachineName $poff.HostedMachineName -AdminAddress $DeliveryController | Out-Null }
+                                        Write-host $poff.DNSName.Split(".",2)[0] " (Powering On)"
+                            
+                                    }
+                                Catch
+                                    {
+                                        Write-host $poff.DNSName.Split(".",2)[0] " (Unable to Turn On)"
+                                    }
+                            }
                     if ($poffs){$script:bad=1}
                 Write-host " "
                 }
@@ -130,7 +125,7 @@ Function MaintMode
                             {
                                 if ($maint.Tags -like "$MaintTag*")
                                     {
-                                    Write-host $maint.DNSName.Split(".",2)[0] "(Tagged for Maintenance Mode)"
+                                        Write-host $maint.DNSName.Split(".",2)[0] "(Tagged for Maintenance Mode)"
                                             if (!($LogOnly))    
                                                 {        
                                                     Try
@@ -139,7 +134,7 @@ Function MaintMode
                                                         }
                                                     Catch
                                                         {
-                                                           Write-host $maint.DNSName.Split(".",2)[0] "(Unable to Enable Maintenance Mode)"
+                                                            Write-host $maint.DNSName.Split(".",2)[0] "(Unable to Enable Maintenance Mode)"
                                                         }
                                                 }
                                     if ($maint){$script:bad = '1'}
@@ -152,7 +147,7 @@ Function MaintMode
                                                 
                                                 Try
                                                     {
- #                                                       Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $false
+                                                        Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $false
                                                     }
                                                 Catch
                                                     {
@@ -225,8 +220,8 @@ Function UpTime
         
             Foreach ($DeliveryController in $DeliveryControllers)
                 {
-                    write-host "Servers with Bad Uptime in " $DeliveryController ":" -ForegroundColor Green
-                    $uptimes = Get-BrokerMachine -SessionSupport MultiSession -AdminAddress $DeliveryController -MaxRecordCount 5000 -RegistrationState Registered | Where-Object PowerState -ne 'Unmanaged' | Sort-Object DNSName
+                    write-host "Machines with Bad Uptime in " $DeliveryController ":" -ForegroundColor Green
+                    $uptimes = Get-BrokerDesktop -AdminAddress $DeliveryController -MaxRecordCount 5000 -RegistrationState Registered | Where-Object PowerState -ne 'Unmanaged' | Sort-Object DNSName
                         foreach ($uptime in $uptimes)
                             {
                                 #Write-host $uptime.HostedMachineName
@@ -243,7 +238,7 @@ Function UpTime
 			                                    $WMIDaystoHours = ($WMIsysuptime.Days)*24
         			                            $WMIhours = $WMIsysuptime.hours
         			                            $WMITotalHours = $WMIDaystoHours + $WMIhours
-					                                if ($WMITotalHours -igt 720 -and ($uptime.SummaryState -like 'Available'))
+					                                if ($WMITotalHours -igt 24 -and ($uptime.SummaryState -like 'Available'))
 						                                {
 							                                if (!($LogOnly)){New-BrokerHostingPowerAction -AdminAddress $DeliveryController -Action Reset -MachineName $uptime.HostedMachineName | Out-Null}
                                                             Write-Host $uptime.DNSName.Split(".",2)[0] has been up for $WMITotalHours Hours " (Force Restarting)"
@@ -251,7 +246,7 @@ Function UpTime
 							
 										if ($uptime){$script:bad = '1'}
 						                                }
-                                                    Elseif ($WMITotalHours -igt 720 -and ($uptime.SummaryState -like 'InUse'))
+                                                    Elseif ($WMITotalHours -igt 24 -and ($uptime.SummaryState -like 'InUse'))
                                                         {
                                                             Write-Host $uptime.DNSName.Split(".",2)[0] has been up for $WMITotalHours Hours " (Users Logged in, Can't Restart)"
                                                         	if ($uptime){$script:bad = '1'}
@@ -405,11 +400,11 @@ Function Get-MoveLogs
     {
         
         Write-Host "****************************************************"
-        write-host "Running MOVE Log function (Only executes on Sunday), Share = \\nam\wardfs\Citrix\Scripts" -ForegroundColor Green
+        write-host "Running MOVE Log function (Only executes on Sunday), Share = \\NAS\Share" -ForegroundColor Green
         if ($firstcomp.DayOfWeek -like 'Sunday')
         {
             
-            $MOVELog = "\\nam\wardfs\citrix\Scripts\MOVE\" + $firstcomp.Year + "-" + $firstcomp.Month + "-" + $firstcomp.Day + "-" + "McafeeMOVEScans.csv"
+            $MOVELog = "\\nas\share\Citrix\Logs\MOVE\" + $firstcomp.Year + "-" + $firstcomp.Month + "-" + $firstcomp.Day + "-" + "McafeeMOVEScans.csv"
             Copy-Item -Path \\servername\reports\McAfeeMOVEScans.csv -Destination $MOVELog -Force -Verbose
         }
 
@@ -488,8 +483,8 @@ Function Check-GPO
                     Return $obj
                 }
 
-                $objs | Sort-Object HostName | Format-Table HostName,WCTime,PF | Out-File "\\nam\wardfs\citrix\Scripts\Logs\BootChecks\BootChecks-$runTime.log"
-                Write-Host "$DeliveryController results written to \\nam\wardfs\citrix\Scripts\Logs\BootChecks\BootChecks-$runTime.log"
+                $objs | Sort-Object HostName | Format-Table HostName,WCTime,PF | Out-File "\\NAS\Share\Citrix\Logs\BootChecks\BootChecks-$runTime.log"
+                Write-Host "$DeliveryController results written to \\NAS\Share\Citrix\Logs\BootChecks\BootChecks-$runTime.log"
             }
         Write-Host "`n****************************************************`n"
         }
@@ -498,7 +493,6 @@ Function Check-GPO
 
 ############ Check App-V Logs ############
 #Function Check-AppVLogs
-<#
     {
         $ErrorActionPreference = 'SilentlyContinue'
         Write-Host "****************************************************`n"
@@ -563,7 +557,7 @@ Function Check-GPO
         $ErrorActionPreference = 'Continue'
     }
 ############ END Check App-V Logs ############
-#>
+
 ############ Email SMTP ###########
 Function Email
     {
@@ -592,7 +586,6 @@ Function Email
 
 ###### Call out Functions ############
 
-<#
 ListUnregs
 
 $now = Get-Date -Format s
@@ -612,34 +605,30 @@ PowerState
 
 $now = Get-Date -Format s
 write-host "- $now"
-#>
-<#PendingUpdates
+
+PendingUpdates
 
 $now = Get-Date -Format s
 write-host "- $now"
-#>
 
 UpTime
 
 $now = Get-Date -Format s
 write-host "- $now"
 
-<#
 Decoms
 
 $now = Get-Date -Format s
 write-host "- $now"
-#>
 
-<#
-DGStats
+#DGStats
 
 Reset-BadLoadEvaluators
 
 $now = Get-Date -Format s
 write-host "- $now"
 
-Check-EventViewer (disabling function now that we have the Get-RDSGracePeriod function)
+#Check-EventViewer (disabling function now that we have the Get-RDSGracePeriod function)
 Get-RDSGracePeriod
 
 $now = Get-Date -Format s
@@ -649,16 +638,12 @@ Get-MoveLogs
 
 $now = Get-Date -Format s
 write-host "- $now"
-#>
 
-<#
 Check-GPO
 
 $now = Get-Date -Format s
 write-host "- $now"
-#>
 
-<#
 Check-AppVLogs
 
 ####################### Get Elapsed Time of Script ###########
@@ -668,7 +653,6 @@ $diff = ($lastcomp - $firstcomp)
 Write-Host This Script took $diff.Minutes minutes and $diff.Seconds seconds to complete.
 Write-Host "This Script Runs at 4:00AM from ($hostname)"
 
-#>
 ##############################################################
 
 Stop-Transcript
