@@ -69,7 +69,7 @@ Function ListUnregs
                                             {
                                                 Write-host $unreg.DNSName.Split(".",2)[0] " (Unable to Force Restart)"
                                             }
-                                    }
+                                    }}
                                 else
                                     {
                                         Write-host $unreg.DNSName.Split(".",2)[0] " (Users Logged in, Can't Restart)"
@@ -108,9 +108,10 @@ Function ListOff
                                         Write-host $poff.DNSName.Split(".",2)[0] " (Unable to Turn On)"
                                     }
                             }
+                        }
                     if ($poffs){$script:bad=1}
                 Write-host " "
-                }
+                        }
         Write-Host "****************************************************"
     }
 ############ END List Powered Off Machines ###########
