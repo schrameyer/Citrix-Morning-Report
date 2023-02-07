@@ -42,7 +42,7 @@ $filename = $firstcomp.month.ToString() + "-" + $firstcomp.day.ToString() + "-" 
 $outputloc = $LogDir + "\" + $filename
 
 $hostname = hostname
-# $DeliveryContoller = sbctxcloud-p01
+$DeliveryControllers = sbctxcloud-p01
 Start-Transcript -Path $outputloc
 
 Write-Host "-"
@@ -96,21 +96,21 @@ Function ListOff
                 {
                     write-host "Powered Off Machines in " $DeliveryController ":" -ForegroundColor Green
                     $poffs = Get-BrokerMachine -AdminAddress $DeliveryController -MaxRecordCount 5000 -PowerState Off -PowerActionPending $false -RegistrationState Unregistered | Sort-Object DNSName | Where-Object {($_.Tags -join(',')) -notlike "*$MaintTag*" -and $_.hostedmachinename -notlike 'ctxTEST*' -and $_.HostedMachineName -notlike 'CTXTST-*'}
-                        foreach ($poff in $poffs)
-                            {
-                                
-                                Try
-                                    {
-                                        
-                                        if (!($LogOnly)){New-BrokerHostingPowerAction -Action TurnOn -MachineName $poff.HostedMachineName -AdminAddress $DeliveryController | Out-Null }
-                                        Write-host $poff.DNSName.Split(".",2)[0] " (Powering On)"
-                            
-                                    }
-                                Catch
-                                    {
-                                        Write-host $poff.DNSName.Split(".",2)[0] " (Unable to Turn On)"
-                                    }
-                            }
+ #                       foreach ($poff in $poffs)
+ #                           {
+  #                              
+   #                             Try
+    #                                {
+   #                                     
+   #                                     if (!($LogOnly)){New-BrokerHostingPowerAction -Action TurnOn -MachineName $poff.HostedMachineName -AdminAddress $DeliveryController | Out-Null }
+   #                                     Write-host $poff.DNSName.Split(".",2)[0] " (Powering On)"
+   #                         
+   #                                 }
+   #                             Catch
+   #                                 {
+   #####                                     Write-host $poff.DNSName.Split(".",2)[0] " (Unable to Turn On)"
+  #                                  }
+   #                         }
                     if ($poffs){$script:bad=1}
                 Write-host " "
                 }
@@ -121,29 +121,29 @@ Function ListOff
 ############ List Machines in Maint Mode ###########
 Function MaintMode
     {
-        Write-Host "****************************************************"
-            Foreach ($DeliveryController in $DeliveryControllers)
-                {
-                    write-host "Machines in Maint Mode in " $DeliveryController ":" -ForegroundColor Green
-                    $maints = Get-BrokerDesktop -AdminAddress $DeliveryController -MaxRecordCount 5000 -IsPhysical $False | Sort-Object DNSName | Where-Object {$_.HostedMachineName -notlike 'CTXTST-*'}
-                        foreach ($maint in $maints)
-                            {
-                                if ($maint.Tags -like "$MaintTag*")
-                                    {
-                                        Write-host $maint.DNSName.Split(".",2)[0] "(Tagged for Maintenance Mode)"
-                                            if (!($LogOnly))    
-                                                {        
-                                                    Try
-                                                        {
-                                                            Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $True
-                                                        }
-                                                    Catch
-                                                        {
-                                                            Write-host $maint.DNSName.Split(".",2)[0] "(Unable to Enable Maintenance Mode)"
-                                                        }
-                                                }
-                                    if ($maint){$script:bad = '1'}
-				    }
+   #     Write-Host "****************************************************"
+   #         Foreach ($DeliveryController in $DeliveryControllers)
+ #               {
+ #                   write-host "Machines in Maint Mode in " $DeliveryController ":" -ForegroundColor Green
+  #                  $maints = Get-BrokerDesktop -AdminAddress $DeliveryController -MaxRecordCount 5000 -IsPhysical $False | Sort-Object DNSName | Where-Object {$_.HostedMachineName -notlike 'CTXTST-*'}
+   #                     foreach ($maint in $maints)
+   #                         {
+    #                            if ($maint.Tags -like "$MaintTag*")
+     #                               {
+    #                                    Write-host $maint.DNSName.Split(".",2)[0] "(Tagged for Maintenance Mode)"
+   #                                         if (!($LogOnly))    
+    #                                            {        
+     #                                               Try
+      #                                                  {
+  #                                                          Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $True
+   #                                                     }
+       #                                             Catch
+        #                                                {
+    #                                                        Write-host $maint.DNSName.Split(".",2)[0] "(Unable to Enable Maintenance Mode)"
+     #                                                   }
+      #                                          }
+       #                             if ($maint){$script:bad = '1'}
+		#		    }
                                 elseif ($maint.Tags -notcontains "$MaintTag*" -and $maint.InMaintenanceMode -eq "True")
                                     {
                                         Write-host $maint.DNSName.Split(".",2)[0] " (Disabling Maint Mode)"
@@ -152,18 +152,18 @@ Function MaintMode
                                                 
                                                 Try
                                                     {
-                                                        Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $false
+ #                                                       Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $false
                                                     }
                                                 Catch
                                                     {
                                                         Write-host $maint.DNSName.Split(".",2)[0] "(Unable to Disable Maintenance Mode"
                                                     }
-                                            }
-                                    }
+  #                                          }
+   #                                 }
                                 
-                            }
-                Write-host " "
-                }
+  #                          }
+   #             Write-host " "
+  #              }
       Write-Host "****************************************************"
     }
 ############ END List Machines in Maint Mode ###########

@@ -27,13 +27,13 @@
 
 cls
 asnp citrix*
-Get-XDAuthentication -ProfileName CloudAdmin
-Citrix.Wem.Agent.LogonService.exe
-
+Get-XDAuthentication  -ProfileName "CloudAdmin"
 
 $script:bad=0
 
 #Defines log path
+$DeliveryControllers = sbctxcloud-p01
+$LogDir = \\nam\wardfs\citrix\Script_results
 $firstcomp = Get-Date
 $filename = $firstcomp.month.ToString() + "-" + $firstcomp.day.ToString() + "-" + $firstcomp.year.ToString() + "-" + $firstcomp.hour.ToString() + "-" + $firstcomp.minute.ToString() + ".txt"
 $outputloc = $LogDir + "\" + $filename
@@ -62,7 +62,7 @@ Function ListUnregs
                                         
                                         Try
                                             {
-                                                if (!($LogOnly)){New-BrokerHostingPowerAction -AdminAddress $DeliveryController -Action Reset -MachineName $unreg.HostedMachineName | Out-Null}
+                                                if (!($LogOnly)){New-BrokerHostingPowerAction -AdminAddress $DeliveryController -Action #Reset -MachineName $unreg.HostedMachineName | Out-Null}
                                                 Write-host $unreg.DNSName.Split(".",2)[0] " (Force Restarting)"
                                             }
                                         Catch
@@ -99,7 +99,7 @@ Function ListOff
                                 Try
                                     {
                                         
-                                        if (!($LogOnly)){New-BrokerHostingPowerAction -Action TurnOn -MachineName $poff.HostedMachineName -AdminAddress $DeliveryController | Out-Null }
+                                        if (!($LogOnly)){New-BrokerHostingPowerAction -Action #TurnOn -MachineName $poff.HostedMachineName -AdminAddress $DeliveryController | Out-Null }
                                         Write-host $poff.DNSName.Split(".",2)[0] " (Powering On)"
                             
                                     }
@@ -132,7 +132,7 @@ Function MaintMode
                                                 {        
                                                     Try
                                                         {
-                                                            Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $True
+                                                            #Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $True
                                                         }
                                                     Catch
                                                         {
@@ -149,7 +149,7 @@ Function MaintMode
                                                 
                                                 Try
                                                     {
-                                                        Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $false
+                                                        #Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $false
                                                     }
                                                 Catch
                                                     {
@@ -495,7 +495,70 @@ Function Check-GPO
 
 ############ Check App-V Logs ############
 #Function Check-AppVLogs
-  ########## END Check App-V Logs ############
+    {
+        $ErrorActionPreference = 'SilentlyContinue'
+        Write-Host "****************************************************`n"
+        Write-Host "Checking for App-V Scheduler log errors`n" -ForegroundColor Green
+        Foreach ($DeliveryController in $DeliveryControllers)
+            {
+                $servers = Get-BrokerMachine -AdminAddress $DeliveryController -SessionSupport MultiSession
+                #Skipping specific Delivery Controller
+                if ($DeliveryController -match "DeliveryControllerName") {
+                    Write-Verbose "Skipping App-V check in DeliveryControllerName"
+                    Continue
+                }
+                
+                foreach ($s in $servers) {
+                    $serverName = $s.HostedMachineName
+                    #Write-Host "Checking $serverName"
+                    try {
+                        $reachable = Test-Connection -ComputerName $serverName -Count 1 -Quiet
+                        if ($reachable) {
+                            # App-V 2.5 uses this name for the service
+                            $service25 = Get-Service -ComputerName $serverName -Name "AppV5SchedulerService"
+                            # App-V 2.6 uses this name for the service
+                            $service26 = Get-Service -ComputerName $serverName -Name "AppVSchedulerService"
+                            if (($service25 -eq $null) -and ($service26 -eq $null)) {
+                                Throw
+                            }
+                        }
+                        else {
+                            Write-Host "$serverName not reachable. Continuing."
+                            Continue
+                        }
+                    }
+                    catch {
+                        Write-Host "App-V Scheduler service not found on host $serverName"
+                        Continue 
+                    }
+                    try {
+                        if ($service25) {
+                            # App-V 2.5 logs to this location
+                            $errorCount = (Get-WinEvent -ComputerName $serverName -FilterHashtable @{LogName='App-V 5 Scheduler';ProviderName='App-V 5 Scheduler Service';Id=0} | Where-Object {$_.Message -match "CoCreateInstance"}).Count
+                            if ($errorCount -gt 0) {
+                                Write-Host "App-V Errors logged on $serverName. Restarting service."
+                                if (!$LogOnly) {Invoke-Command -ComputerName $serverName -ScriptBlock {Restart-Service -Name AppV5SchedulerService}}
+                            }
+                        }
+                        elseif ($service26) {
+                            # App-V 2.6 logs to this location
+                            $errorCount = (Get-WinEvent -ComputerName $serverName -FilterHashtable @{LogName='App-V 5 Scheduler Agent';ProviderName='App-V 5 Scheduler Service';Id=0} | Where-Object {$_.Message -match "CoCreateInstance"}).Count
+                            if ($errorCount -gt 0) {
+                                Write-Host "App-V Errors logged on $servername. Restarting service."
+                                if (!$LogOnly) {Invoke-Command -ComputerName $serverName -ScriptBlock {Restart-Service -Name AppVSchedulerService}}
+                            }
+                        }
+                    }
+                    catch {
+                        Continue
+                    }  
+                }  
+            }
+        Write-Host ""
+        Write-Host "****************************************************`n"
+        $ErrorActionPreference = 'Continue'
+    }
+############ END Check App-V Logs ############
 
 ############ Email SMTP ###########
 Function Email
@@ -525,6 +588,7 @@ Function Email
 
 ###### Call out Functions ############
 
+<#
 ListUnregs
 
 $now = Get-Date -Format s
@@ -544,30 +608,34 @@ PowerState
 
 $now = Get-Date -Format s
 write-host "- $now"
-
-PendingUpdates
+#>
+<#PendingUpdates
 
 $now = Get-Date -Format s
 write-host "- $now"
+#>
 
 UpTime
 
 $now = Get-Date -Format s
 write-host "- $now"
 
+<#
 Decoms
 
 $now = Get-Date -Format s
 write-host "- $now"
+#>
 
-#DGStats
+<#
+DGStats
 
 Reset-BadLoadEvaluators
 
 $now = Get-Date -Format s
 write-host "- $now"
 
-#Check-EventViewer (disabling function now that we have the Get-RDSGracePeriod function)
+Check-EventViewer (disabling function now that we have the Get-RDSGracePeriod function)
 Get-RDSGracePeriod
 
 $now = Get-Date -Format s
@@ -577,12 +645,13 @@ Get-MoveLogs
 
 $now = Get-Date -Format s
 write-host "- $now"
-
+#>
 Check-GPO
 
 $now = Get-Date -Format s
 write-host "- $now"
 
+<#
 Check-AppVLogs
 
 ####################### Get Elapsed Time of Script ###########
@@ -592,6 +661,7 @@ $diff = ($lastcomp - $firstcomp)
 Write-Host This Script took $diff.Minutes minutes and $diff.Seconds seconds to complete.
 Write-Host "This Script Runs at 4:00AM from ($hostname)"
 
+#>
 ##############################################################
 
 Stop-Transcript
