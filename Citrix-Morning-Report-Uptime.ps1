@@ -13,21 +13,22 @@
  08/18/2022 - changed uptime greater than value from 24 hours to 30 days (720 Hours)
  08/18/2022 - Changed Get-BrokerDesktop to Get-BrokerMachine (supports -SessionSupport)
  08/18/2022 - set so uptime only looks at MultiSession delivery groups (exclude VDI's) -SessionSupport MultiSession
-
+04/23 - had to comment out the Parameter(Mandatory=$true) was still prompting me for parameters even though I already specifried them
  #>
 
  Param(
-                [Parameter(Mandatory=$True,Position=1)]
-                [string[]]$DeliveryControllers,
-                [Parameter(Mandatory=$True)]
-                [string]$LogDir,
+  #              [Parameter(Mandatory=$True,Position=1)]
+                [string[]]$DeliveryControllers = "sbctxcloud-p05",
+   #             [Parameter(Mandatory=$True)]
+                [string]$LogDir = "\\nam\wardfs\citrix\.GITHUB\Logs\CitrixMorningReport",
                 [string]$MaintTag = "None",
+                [string]$DeliveryController = "sbctxcloud-p05",
                 #[ValidateSet($True,$False)]
                 [Switch]$Email,
                 [Switch]$LogOnly,
-                [String]$SMTPserver,
-                [string[]]$ToAddress,
-                [string]$FromAddress
+                [String]$SMTPserver = "webmail.zimmer.com",
+                [string[]]$ToAddress = "christopher.schrameyer@zimmerbiomet.com",
+                [string]$FromAddress = "ControlUp@zimmerbiomet.com"
                 )
 
 cls
@@ -42,7 +43,7 @@ $filename = $firstcomp.month.ToString() + "-" + $firstcomp.day.ToString() + "-" 
 $outputloc = $LogDir + "\" + $filename
 
 $hostname = hostname
-#$DeliveryControllers = sbctxcloud-p01
+#$DeliveryControllers = sbctxcloud-p05
 Start-Transcript -Path $outputloc
 
 Write-Host "-"
@@ -95,22 +96,22 @@ Function ListOff
             Foreach ($DeliveryController in $DeliveryControllers)
                 {
                     write-host "Powered Off Machines in " $DeliveryController ":" -ForegroundColor Green
-                    $poffs = Get-BrokerMachine -AdminAddress $DeliveryController -MaxRecordCount 5000 -PowerState Off -PowerActionPending $false -RegistrationState Unregistered | Sort-Object DNSName | Where-Object {($_.Tags -join(',')) -notlike "*$MaintTag*" -and $_.hostedmachinename -notlike 'ctxTEST*' -and $_.HostedMachineName -notlike 'CTXTST-*'}
- #                       foreach ($poff in $poffs)
- #                           {
-  #                              
-   #                             Try
-    #                                {
-   #                                     
-   #                                     if (!($LogOnly)){New-BrokerHostingPowerAction -Action TurnOn -MachineName $poff.HostedMachineName -AdminAddress $DeliveryController | Out-Null }
-   #                                     Write-host $poff.DNSName.Split(".",2)[0] " (Powering On)"
-   #                         
-   #                                 }
-   #                             Catch
-   #                                 {
-   #####                                     Write-host $poff.DNSName.Split(".",2)[0] " (Unable to Turn On)"
-  #                                  }
-   #                         }
+                    $poffs = Get-BrokerMachine -SessionSupport MultiSession -AdminAddress $DeliveryController -MaxRecordCount 5000 -PowerState Off -PowerActionPending $false -RegistrationState Unregistered | Sort-Object DNSName
+                       foreach ($poff in $poffs)
+                            {
+                                
+                                Try
+                                    {
+                                        
+                                       if (!($LogOnly)){New-BrokerHostingPowerAction -Action TurnOn -MachineName $poff.HostedMachineName -AdminAddress $DeliveryController | Out-Null }
+                                        Write-host $poff.DNSName.Split(".",2)[0] " (Powering On)"
+                            
+                                    }
+                                Catch
+                                    {
+                                        Write-host $poff.DNSName.Split(".",2)[0] " (Unable to Turn On)"
+                                   }
+                            }
                     if ($poffs){$script:bad=1}
                 Write-host " "
                 }
@@ -145,21 +146,21 @@ Function MaintMode
                                     if ($maint){$script:bad = '1'}
 				    }
                                 elseif ($maint.Tags -notcontains "$MaintTag*" -and $maint.InMaintenanceMode -eq "True")
-                                    {
+                                   {
                                         Write-host $maint.DNSName.Split(".",2)[0] " (Disabling Maint Mode)"
                                         if (!($LogOnly))
                                             {
                                                 
-                                                Try
+ <#                                               Try
                                                     {
- #                                                       Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $false
+                                                        Set-BrokerMachine -MachineName $maint.MachineName -InMaintenanceMode $false
                                                     }
                                                 Catch
                                                     {
                                                         Write-host $maint.DNSName.Split(".",2)[0] "(Unable to Disable Maintenance Mode"
-                                                    }
+                                                    } #>
                                             }
-                                    }
+                                   }
                                 
                             }
                 Write-host " "
@@ -176,7 +177,7 @@ Function PowerState
             Foreach ($DeliveryController in $DeliveryControllers)
                 {
                     write-host "Machines with Bad Power States in " $DeliveryController ":" -ForegroundColor Green
-                    $pstates = Get-BrokerDesktop -AdminAddress $DeliveryController -MaxRecordCount 5000 | Sort-Object DNSName
+                    $pstates = Get-BrokerMachine -AdminAddress $DeliveryController -MaxRecordCount 5000 | Sort-Object DNSName
                         foreach ($pstate in $pstates)
                             {
                                 if ($pstate.PowerState -ne 'Off' -and $pstate.PowerState -ne 'On' -and $pstate.PowerState -ne 'Unmanaged')
@@ -235,7 +236,7 @@ Function UpTime
                                         Try
                                             {
                                         
-                                                #Write-host $uptime.HostedMachineName
+                                                Write-host $uptime.HostedMachineName
                                                 #Perform System Uptime Check
 					                            $LastBoot = (Get-WmiObject -Class Win32_OperatingSystem -computername $uptime.DNSName).LastBootUpTime
         			                            $WMIsysuptime = (Get-Date) - [System.Management.ManagementDateTimeconverter]::ToDateTime($LastBoot)
@@ -245,8 +246,8 @@ Function UpTime
         			                            $WMITotalHours = $WMIDaystoHours + $WMIhours
 					                                if ($WMITotalHours -igt 720 -and ($uptime.SummaryState -like 'Available'))
 						                                {
-							                                if (!($LogOnly)){New-BrokerHostingPowerAction -AdminAddress $DeliveryController -Action Reset -MachineName $uptime.HostedMachineName | Out-Null}
-                                                            Write-Host $uptime.DNSName.Split(".",2)[0] has been up for $WMITotalHours Hours " (Force Restarting)"
+							                                #if (!($LogOnly)){New-BrokerHostingPowerAction -AdminAddress $DeliveryController -Action Reset -MachineName $uptime.HostedMachineName | Out-Null}
+                                                            Write-Host $uptime.DNSName.Split(".",2)[0] has been up for $WMITotalHours Hours " (Check this out later)"
 							                                $u++
 							
 										if ($uptime){$script:bad = '1'}
@@ -256,7 +257,7 @@ Function UpTime
                                                             Write-Host $uptime.DNSName.Split(".",2)[0] has been up for $WMITotalHours Hours " (Users Logged in, Can't Restart)"
                                                         	if ($uptime){$script:bad = '1'}
 							}
-                                            }
+                                            } 
                                         Catch
                                             {
                                                write-host $uptime.DNSName.Split(".",2)[0] "(WMI Issues)"
@@ -285,7 +286,7 @@ Function DGStats
                                 Write-Host **** Name: $DG.Name ****
                                 Write-Host Sessions: $DG.Sessions
                                 Write-Host Maint: $DG.InMaintenanceMode
-                                Write-Host FuncLevel: $DG.MinimumFunctionalLevel
+  #                              Write-Host FuncLevel: $DG.MinimumFunctionalLevel
                                 Write-Host "-"
                             }
                 Write-host " "
@@ -324,8 +325,8 @@ Function Reset-BadLoadEvaluators
             Write-Host "Checking for bad load evaluator data`n" -ForegroundColor Green
             Foreach ($DeliveryController in $DeliveryControllers)
                 {
-                    # Evaluate current state:
-                    # Get-BrokerMachine -AdminAddress $DeliveryController -SessionSupport MultiSession -Property SessionCount,LoadIndex,DNSName | Sort-Object @{Expression="LoadIndex";Descending=$True},@{Expression="SessionCount";Descending=$True}
+                    #Evaluate current state:
+                    Get-BrokerMachine -AdminAddress $DeliveryController -SessionSupport MultiSession -Property SessionCount,LoadIndex,DNSName | Sort-Object @{Expression="LoadIndex";Descending=$True},@{Expression="SessionCount";Descending=$True}
                     Write-Host " "
                     $badMachines = @()
                     # Machines with 100% load evaluator and 0 sessions
@@ -373,7 +374,7 @@ Function Check-EventViewer
                     #List of EventIDs to search for
                     $EventIDs = '1069'
                     
-                    $VDAs = Get-BrokerDesktop -AdminAddress $DeliveryController -MaxRecordCount 5000 -RegistrationState Registered -IsPhysical $False | Sort-Object DNSName
+                    $VDAs = Get-BrokerMachine -AdminAddress $DeliveryController -MaxRecordCount 5000 -RegistrationState Registered -IsPhysical $False | Sort-Object DNSName
                     Foreach ($VDA in $VDAs)
                         {
                             foreach ($EventID in $EventIDs)
@@ -401,7 +402,7 @@ Function Check-EventViewer
 ########### END Check Event Viewer ########
 
 ############ Copy MOVE Log ###########
-Function Get-MoveLogs
+ <#Function Get-MoveLogs
     {
         
         Write-Host "****************************************************"
@@ -415,7 +416,7 @@ Function Get-MoveLogs
 
         
         Write-Host "****************************************************"
-    }
+    }#>
 ############ END Copy MOVE Log ###########
 
 ############ RDS Grace Period Check ###########
@@ -592,7 +593,7 @@ Function Email
 
 ###### Call out Functions ############
 
-<#
+
 ListUnregs
 
 $now = Get-Date -Format s
@@ -612,26 +613,26 @@ PowerState
 
 $now = Get-Date -Format s
 write-host "- $now"
-#>
-<#PendingUpdates
+
+PendingUpdates
 
 $now = Get-Date -Format s
 write-host "- $now"
-#>
+
 
 UpTime
 
 $now = Get-Date -Format s
 write-host "- $now"
 
-<#
+
 Decoms
 
 $now = Get-Date -Format s
 write-host "- $now"
-#>
 
-<#
+
+
 DGStats
 
 Reset-BadLoadEvaluators
@@ -639,8 +640,8 @@ Reset-BadLoadEvaluators
 $now = Get-Date -Format s
 write-host "- $now"
 
-Check-EventViewer (disabling function now that we have the Get-RDSGracePeriod function)
-Get-RDSGracePeriod
+#Check-EventViewer (disabling function now that we have the Get-RDSGracePeriod function)
+# Get-RDSGracePeriod (DONT KNOW WHAT THIS IS)
 
 $now = Get-Date -Format s
 write-host "- $now"
@@ -649,26 +650,26 @@ Get-MoveLogs
 
 $now = Get-Date -Format s
 write-host "- $now"
-#>
 
-<#
+
+
 Check-GPO
 
 $now = Get-Date -Format s
 write-host "- $now"
-#>
 
-<#
-Check-AppVLogs
+
+
+# Check-AppVLogs
 
 ####################### Get Elapsed Time of Script ###########
 $lastcomp = Get-date
 $diff = ($lastcomp - $firstcomp)
 
 Write-Host This Script took $diff.Minutes minutes and $diff.Seconds seconds to complete.
-Write-Host "This Script Runs at 4:00AM from ($hostname)"
+# Write-Host "This Script Runs at 4:00AM from ($hostname)"
 
-#>
+
 ##############################################################
 
 Stop-Transcript
