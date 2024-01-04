@@ -28,7 +28,7 @@
                 [Switch]$Email,
                 [Switch]$LogOnly,
                 [String]$SMTPserver = "webmail.zimmer.com",
-                [string[]]$ToAddress = "MG-Global-Citrix-Infrastructure@zimmerbiomet.com",
+                [string[]]$ToAddress = "christopher.schrameyer@zimmerbiomet.com,rishabh.upadhyay@zimmerbiomet.com,c1ccccff.ezcollab.onmicrosoft.com@amer.teams.ms",
                 [string]$FromAddress = "ControlUp@zimmerbiomet.com"
                 )
 
@@ -195,28 +195,28 @@ Function PowerState
 ############ END List Bad Power States ###########
 
 ############ List Pending Updates ###########
-# Function PendingUpdates
-#    {
-#        Write-Host "****************************************************"
-#        
-#            Foreach ($DeliveryController in $DeliveryControllers)
-#                {
-#                    write-host "Machines with Pending Updates in " $DeliveryController ":" -ForegroundColor Green
-#                    $pupdates = Get-BrokerMachine -AdminAddress $DeliveryController -MaxRecordCount 5000 -ProvisioningType MCS | Sort-Object DNSName
-#                        foreach ($pupdate in $pupdates)
-#                            {
-#                                #Write-host $pupdate.DNSName.Split(".",2)[0] $pupdate.ImageOutOfDate
-#                                if ($pupdate.ImageOutOfDate -eq $True)
-#                                    {
-#                                        Write-host $pupdate.DNSName.Split(".",2)[0] $pupdate.ImageOutOfDate
-#                                        if ($pupdates){$script:bad=1}
-#                                    }
-#                            }
-#                    
-#                Write-host " "
-#                }
-#        Write-Host "****************************************************"    
-#    }
+Function PendingUpdates
+    {
+        Write-Host "****************************************************"
+        
+            Foreach ($DeliveryController in $DeliveryControllers)
+                {
+                    write-host "Machines with Pending Updates in " $DeliveryController ":" -ForegroundColor Green
+                    $pupdates = Get-BrokerMachine -AdminAddress $DeliveryController -MaxRecordCount 5000 -ProvisioningType MCS | Sort-Object DNSName
+                        foreach ($pupdate in $pupdates)
+                            {
+                                #Write-host $pupdate.DNSName.Split(".",2)[0] $pupdate.ImageOutOfDate
+                                if ($pupdate.ImageOutOfDate -eq $True)
+                                    {
+                                        Write-host $pupdate.DNSName.Split(".",2)[0] $pupdate.ImageOutOfDate
+                                        if ($pupdates){$script:bad=1}
+                                    }
+                            }
+                    
+                Write-host " "
+                }
+        Write-Host "****************************************************"    
+    }
 ############ END List Pending Updates ###########
 
 ############ List Bad Up Time ###########
@@ -485,9 +485,9 @@ Function Get-RDSGracePeriod
                                $vmName = $RDSVM.DNSName.Split(".",2)[0]
                                Try
                                {
-                                   $GracePeriod = Invoke-Command -ComputerName $RDSVM.DNSName.Split(".",2)[0] -ScriptBlock {
-                                            (Invoke-WmiMethod -PATH (gwmi -namespace root\cimv2\terminalservices -class win32_terminalservicesetting).__PATH -name GetGracePeriodDays).daysleft                 
-                                   }
+                                   #$GracePeriod = Invoke-Command -ComputerName $RDSVM.DNSName.Split(".",2)[0] -ScriptBlock {
+                                   #         (Invoke-WmiMethod -PATH (gwmi -namespace root\cimv2\terminalservices -class win32_terminalservicesetting).__PATH -name GetGracePeriodDays).daysleft                 
+                                   #}
                                     $GracePeriod = (Invoke-WmiMethod -Path (Get-WmiObject -Namespace "root\cimv2\terminalservices" -Class "Win32_TerminalServiceSetting" -ComputerName $vmName).__PATH -Name GetGracePeriodDays).DaysLeft
                                     If ($GracePeriod -ilt '5' -and $GracePeriod -igt '0')
                                         {
@@ -496,7 +496,7 @@ Function Get-RDSGracePeriod
                                         }
                                         Else
                                         {
-                                            Write-host $RDSVM.DNSName.Split(".",2)[0] Grace Period Good $GracePeriod
+                                            #Write-host $RDSVM.DNSName.Split(".",2)[0] Grace Period Good $GracePeriod
                                         }
                                }
                                Catch
