@@ -312,7 +312,7 @@ Function DrainingUntilRestart
                                      } 
                                 Catch
                                     {
-                                       write-host $drain.HostedMachineName "(WMI Issues)"
+                                       write-host $drain.HostedMachineName "(Machine in Drain Mode)"
                                     }
                             
                             }                            
