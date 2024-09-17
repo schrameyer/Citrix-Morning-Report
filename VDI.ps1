@@ -21,14 +21,14 @@
   #              [Parameter(Mandatory=$True,Position=1)]
                 [string[]]$DeliveryControllers = "sbctxcloud-p05",
    #             [Parameter(Mandatory=$True)]
-                [string]$LogDir = "\\nam\wardfs\citrix\.GITHUB\Logs\CitrixMorningReport",
+                [string]$LogDir = "\\nam\wardfs\citrix\.GITHUB\Logs\VDI",
                 [string]$MaintTag = "None",
                 [string]$DeliveryController = "sbctxcloud-p05",
                 #[ValidateSet($True,$False)]
                 [Switch]$Email,
                 [Switch]$LogOnly,
                 [String]$SMTPserver = "webmail.zimmer.com",
-                [string[]]$ToAddress = "christopher.schrameyer@zimmerbiomet.com,deborah.harman@zimmerbiomet.com",
+                [string[]]$ToAddress = "MG-Global-Citrix-Infrastructure@zimmerbiomet.com",
                 [string]$FromAddress = "ControlUp@zimmerbiomet.com"
                 )
 
@@ -61,7 +61,7 @@ Function ListUnregs
                     $unregs = Get-BrokerMachine -SessionSupport MultiSession -AdminAddress $DeliveryController -MaxRecordCount 5000 -PowerState On -PowerActionPending $false -RegistrationState Unregistered | Sort-Object DNSName
                         foreach ($unreg in $unregs)
                             {
-                                #write-host $unreg.dnsname
+                                write-host $unreg.dnsname
                                 if ($unreg.SummaryState -like 'Available' -or $unreg.SummaryState -like 'Unregistered')
                                     {
                                         
@@ -512,7 +512,7 @@ Function Get-RDSGracePeriod
 
 ############ Check GPO Application ############
 ## This function is reserved to check specific company type GPO settings upon boot ##
-<#Function Check-GPO
+Function Check-GPO
     {
         Write-Host "****************************************************`n"
         Write-Host "Checking for successful GPO application`n" -ForegroundColor Green
@@ -550,7 +550,7 @@ Function Get-RDSGracePeriod
         }
 
 ############ End Check GPO Application ############
-#>
+
 ############ Check App-V Logs ############
 #Function Check-AppVLogs
 <#

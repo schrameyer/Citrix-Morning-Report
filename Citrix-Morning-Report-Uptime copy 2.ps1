@@ -28,7 +28,7 @@
                 [Switch]$Email,
                 [Switch]$LogOnly,
                 [String]$SMTPserver = "webmail.zimmer.com",
-                [string[]]$ToAddress = "christopher.schrameyer@zimmerbiomet.com,deborah.harman@zimmerbiomet.com",
+                [string[]]$ToAddress = "MG-Global-Citrix-Infrastructure@zimmerbiomet.com",
                 [string]$FromAddress = "ControlUp@zimmerbiomet.com"
                 )
 
@@ -512,7 +512,7 @@ Function Get-RDSGracePeriod
 
 ############ Check GPO Application ############
 ## This function is reserved to check specific company type GPO settings upon boot ##
-<#Function Check-GPO
+Function Check-GPO
     {
         Write-Host "****************************************************`n"
         Write-Host "Checking for successful GPO application`n" -ForegroundColor Green
@@ -550,7 +550,7 @@ Function Get-RDSGracePeriod
         }
 
 ############ End Check GPO Application ############
-#>
+
 ############ Check App-V Logs ############
 #Function Check-AppVLogs
 <#
